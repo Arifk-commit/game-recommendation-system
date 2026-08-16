@@ -16,10 +16,38 @@ similarity = pickle.load(open('similarity(final).pkl', 'rb'))
 # similarity = pickle.load(open('similarity(games).pkl', 'rb'))
 
 ## function for fetching the posters of the games
-def fetch_poster(game_id):
-    response = requests.get('https://api.rawg.io/api/games/{}?key=54476e262ea442878dec3dc702181981'.format(game_id))
-    data = response.json()
-    return data['background_image'] 
+@st.cache_data
+def fetch_poster(game_name):
+    # --- Code for fetching by game_id (commented out) ---
+    # url = f'https://www.cheapshark.com/api/1.0/games?id={game_id}'
+    # try:
+    #     response = requests.get(url, headers=headers, timeout=5)
+    #     if response.status_code == 200:
+    #         data = response.json()
+    #         if isinstance(data, dict) and data.get('info', {}).get('thumb'):
+    #             return data['info']['thumb']
+    # except Exception:
+    #     pass
+
+    # --- Fetching poster by game_name ---
+    url = 'https://www.cheapshark.com/api/1.0/games'
+    params = {'title': game_name}
+    headers = {
+        'User-Agent': 'GameRecommender/1.0 (Mozilla/5.0)'
+    }
+    fallback_poster = 'https://placehold.co/400x500/1e1e24/ffffff.png?text=No+Poster+Available'
+    try:
+        response = requests.get(url, params=params, headers=headers, timeout=5)
+        if response.status_code == 200:
+            data = response.json()
+            # CheapShark title search returns a list of matching games
+            if isinstance(data, list) and len(data) > 0 and data[0].get('thumb'):
+                return data[0]['thumb']
+            elif isinstance(data, dict) and data.get('info', {}).get('thumb'):
+                return data['info']['thumb']
+    except Exception:
+        pass
+    return fallback_poster
 
 
 
@@ -29,16 +57,23 @@ def recommend(game):
     game_index = games[games['name'] == game].index[0]
     distances = similarity[game_index]
 
-    game_indices = sorted(list(enumerate(distances)), reverse=True, key=lambda x: x[1])[1:8]
+    game_indices = sorted(list(enumerate(distances)), reverse=True, key=lambda x: x[1])[1:6]
 
     recommended_games = []
     recommended_games_poster = []
 
     for i in game_indices:
-        games_id = games.iloc[i[0]]['id']
-        recommended_games.append(games.iloc[i[0]]['name'])
-        recommended_games_poster.append(fetch_poster(games_id))
-    return recommended_games,recommended_games_poster
+        game_name = games.iloc[i[0]]['name']
+        recommended_games.append(game_name)
+        
+        # Code for game_id (commented out)
+        # games_id = games.iloc[i[0]]['id']
+        # recommended_games_poster.append(fetch_poster(games_id))
+
+        # Fetch poster using game_name
+        recommended_games_poster.append(fetch_poster(game_name))
+
+    return recommended_games, recommended_games_poster
 
 # Streamlit UI 
 st.title("🎮 Game Recommendation System")
@@ -46,23 +81,13 @@ st.title("🎮 Game Recommendation System")
 selected_game_name = st.selectbox("Select a game to get recommendations:", games['name'].values)
 
 if st.button("Recommend"):
-    names ,posters = recommend(selected_game_name)
+    names, posters = recommend(selected_game_name)
     st.subheader("Recommended Games:")
-    col1, col2, col3, col4, col5 = st.columns(5)
+    cols = st.columns(5)
 
-    with col1:
-        st.text(names[0])
-        st.image(posters[0] ,width='content')
-    with col2:
-        st.text(names[1])
-        st.image(posters[1],width='content')
-    with col3:
-        st.text(names[2])
-        st.image(posters[2],width='content')
-    with col4:
-        st.text(names[3])
-        st.image(posters[3],width='content')
-    with col5:
-        st.text(names[4])
-        st.image(posters[4],width='content')
+    for i, col in enumerate(cols):
+        with col:
+            st.text(names[i])
+            st.image(posters[i])
+
 

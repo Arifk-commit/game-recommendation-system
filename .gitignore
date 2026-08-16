@@ -1,8 +1,30 @@
-New folder
-gamesenv
-game_info.csv.zip
-games.ipynb
-games_dict(games).pkl
-similarity(games).pkl
-.ipynb_checkpoints
+# Python bytecode & cache
+__pycache__/
+*.py[cod]
+*$py.class
 
+# Virtual environments
+venv/
+env/
+ENV/
+gamesenv/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# IDE & Editor settings
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Large data & model files (Optional / Recommended)
+# game_info.csv
+# *.pkl
+
+# Other temporary folders
+New folder/
